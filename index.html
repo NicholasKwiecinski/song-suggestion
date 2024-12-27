@@ -187,13 +187,17 @@
                     tr.onclick = () => {
                         window.location.href = `sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}`;
                         const event = new CustomEvent('smsLinkClicked');
-                        window.dispatchEvent(event, { detail: { song: cols[1], artist: cols[0] } });
+                        const payload = { song: cols[1], artist: cols[0] };
+                        window.dispatchEvent(event, { detail: JSON.stringify(payload) });
                     };
                     tableBody.appendChild(tr);
                 }
             });
         }
         fetchCSV();
+
+
+
 
     </script>
 </body>
