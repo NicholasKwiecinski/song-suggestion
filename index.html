@@ -186,9 +186,8 @@
                     tr.innerHTML = `<td data-label="Song"><a href="sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}">${cols[1]}</a></td><td data-label="Artist">${cols[0]}</td><td data-label="Genre">${cols[2]}</td><td data-label="Year">${cols[3]}</td>`;
                     tr.onclick = () => {
                         window.location.href = `sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}`;
-                        const event = new CustomEvent('smsLinkClicked');
-                        const payload = { song: cols[1], artist: cols[0] };
-                        window.dispatchEvent(event, { detail: JSON.stringify(payload) });
+                        const event = new CustomEvent('smsLinkClicked', { detail: { song: cols[1], artist: cols[0] } });
+                        window.dispatchEvent(event);
                     };
                     tableBody.appendChild(tr);
                 }
