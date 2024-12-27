@@ -187,6 +187,7 @@
                     tr.onclick = () => {
                         window.location.href = `sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}`;
                         const event = new CustomEvent('smsLinkClicked', { detail: { song: cols[1], artist: cols[0] } });
+                        window.parent.postMessage(event);
                         window.dispatchEvent(event);
                     };
                     tableBody.appendChild(tr);
