@@ -1,0 +1,57 @@
+<style>
+    .container {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        /* fill parent iframe height by default */
+        overflow: hidden;
+    }
+
+    .responsive-iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+</style>
+
+<script>
+    // Notify parent (host wrapper) about our content height so the host can resize the outer iframe
+    (function () {
+        // Heuristic parent frame id used by the host script; harmless if parent ignores it
+        const FRAME_ID = 'app_iframe_protect_script_676a034b74c8f';
+
+        function notifyParentHeight(px) {
+            try {
+                window.parent.postMessage({ id: FRAME_ID, eventType: 'resize', height: Math.round(px) }, '*');
+            } catch (err) {
+                // best-effort
+                console.warn('notifyParentHeight failed', err);
+            }
+        }
+
+        // Simple watcher for body height changes (used to inform parent)
+        var lastHeight = document.body.clientHeight;
+        function checkHeight() {
+            var h = document.body.clientHeight + 20; // small padding
+            if (h !== lastHeight) {
+                lastHeight = h;
+                notifyParentHeight(h);
+            }
+        }
+
+        // Run on load and then poll every 300ms (lightweight)
+        window.addEventListener('load', function () { checkHeight(); });
+        setInterval(checkHeight, 300);
+
+        // Also attempt an initial notify after a short delay
+        setTimeout(checkHeight, 500);
+    })();
+</script>
+
+<div class="container">
+    <iframe class="responsive-iframe" src="https://nicholaskwiecinski.github.io/song-suggestion/gigList.html"
+        frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>

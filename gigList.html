@@ -170,7 +170,7 @@
         <h1>Upcoming Gigs</h1>
         <p class="lead">Data source: Google Sheets — live update (CSV)</p>
 
-        <input id="searchInput" placeholder="Search by date, venue or location" oninput="filterTable()" />
+        <!-- search removed per request -->
 
         <table id="gigTable" aria-describedby="gigTableDesc">
             <thead>
@@ -222,7 +222,12 @@
 
         function renderLoading(rows = 6) {
             tableBody.innerHTML = '';
-            for (let i = 0; i < rows; i++) { const tr = document.createElement('tr'); tr.className = 'loading-row'; tr.innerHTML = '<td></td><td></td><td></td>'; tableBody.appendChild(tr); }
+            for (let i = 0; i < rows; i++) {
+                const tr = document.createElement('tr');
+                tr.className = 'loading-row';
+                tr.innerHTML = '<td></td><td></td><td></td>';
+                tableBody.appendChild(tr);
+            }
         }
 
         function normalizeRow(r) {
@@ -264,7 +269,13 @@
                     const location = r[2] || '';
                     parsed.push({ dateRaw, venue, location, dateObj: parseDateFlexible(dateRaw) });
                 }
-                gigs = parsed;
+                // Filter out past gigs (keep those with no parsable date)
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                gigs = parsed.filter(g => {
+                    if (!g.dateObj) return true; // keep undated or flexible entries
+                    return g.dateObj >= todayStart; // keep today and future
+                });
                 statusEl.textContent = `Loaded ${gigs.length} gigs`;
                 sortAndRender();
             }).catch(err => {
@@ -298,29 +309,35 @@
         }
 
         function renderTable(items) {
-            tableBody.innerHTML = '';
-            if (items.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" class="empty">No gigs match your search</td></tr>'; return }
-            items.forEach(g => {
-                const tr = document.createElement('tr');
+            // Render all rows in one pass (reduce reflow) and apply a subtle fade-in
+            if (items.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="empty">No upcoming gigs</td></tr>';
+                return;
+            }
+            let html = '';
+            for (let i = 0; i < items.length; i++) {
+                const g = items[i];
                 const dateText = g.dateRaw || '';
-                tr.innerHTML = `<td data-label="Date" class="col-date">${escapeHtml(dateText)}</td>
-                                <td data-label="Venue" class="col-venue">${escapeHtml(g.venue)}</td>
-                                <td data-label="Location" class="col-location">${escapeHtml(g.location)}</td>`;
-                tableBody.appendChild(tr);
+                html += `<tr class="row"><td data-label="Date" class="col-date">${escapeHtml(dateText)}</td><td data-label="Venue" class="col-venue">${escapeHtml(g.venue)}</td><td data-label="Location" class="col-location">${escapeHtml(g.location)}</td></tr>`;
+            }
+            tableBody.innerHTML = html;
+
+            // animate in rows (staggered small delay for a smooth effect)
+            const rows = Array.from(tableBody.querySelectorAll('tr.row'));
+            rows.forEach((r, idx) => {
+                r.style.opacity = '0';
+                r.style.transform = 'translateY(6px)';
+                r.style.transition = 'opacity 220ms ease, transform 220ms ease';
+                setTimeout(() => {
+                    r.style.opacity = '';
+                    r.style.transform = '';
+                }, 40 * idx);
             });
         }
 
         function escapeHtml(s) { return (s || '').replace(/[&<>\"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]) }
 
-        function filterTable() {
-            const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-            if (!q) { renderTable(gigs); statusEl.textContent = `Loaded ${gigs.length} gigs`; return }
-            const filtered = gigs.filter(g => {
-                return (g.dateRaw || '').toLowerCase().includes(q) || (g.venue || '').toLowerCase().includes(q) || (g.location || '').toLowerCase().includes(q);
-            });
-            renderTable(filtered);
-            statusEl.textContent = `Showing ${filtered.length} of ${gigs.length}`;
-        }
+        // search removed per request
 
         function sortByColumn(col) {
             if (currentSort.col === col) { currentSort.dir = (currentSort.dir === 'asc') ? 'desc' : 'asc'; }
