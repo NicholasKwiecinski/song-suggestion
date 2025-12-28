@@ -184,39 +184,6 @@
             border-bottom: 1px solid #eee;
         }
 
-        /* SMS button */
-        a.sms-btn {
-            margin-left: 8px;
-            padding: 6px 8px;
-            font-size: 12px;
-            border-radius: 6px;
-            background: #007BFF;
-            color: #fff;
-            text-decoration: none;
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        a.sms-btn:hover {
-            opacity: 0.92;
-        }
-
-        @media (max-width: 600px) {
-            a.sms-btn {
-                padding: 8px 10px;
-                font-size: 13px;
-            }
-
-            td[data-label="Song"] a:first-child {
-                max-width: calc(100% - 72px);
-                display: inline-block;
-                vertical-align: middle;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-        }
-
         @keyframes shimmer {
             0% {
                 background-position: 200% 0;
@@ -232,7 +199,7 @@
 <body>
     <h3>Cover Songs</h3>
     <p>Click on the song title to send a song request to Larry's phone!</p>
-    <p style="font-size:0.95em;color:#555;margin-top:-8px;margin-bottom:12px">(Uses your email client to send to Larry's Verizon SMS gateway: <code>5869074619@vtext.com</code>)</p>
+    <p style="font-size:0.95em;color:#555;margin-top:-8px;margin-bottom:12px">(Opens your SMS app to send the request directly to Larry: <code>+1 586-907-4619</code>)</p>
     <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search for songs based on title..">
     <table id="myTable">
         <thead>
@@ -314,20 +281,14 @@
                 rows.forEach(row => {
                     const cols = row.split(',');
                     if (cols.length >= 4) {
-                        // use Verizon email-to-SMS gateway address: 10-digit@vtext.com
-                        const verizonAddress = '5869074619@vtext.com';
-                        const subject = 'Song Request';
-                        const body = `Requesting ${cols[1]} by ${cols[0]}`;
-                        const mailto = `mailto:${verizonAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
                         const smsBody = `Requesting ${cols[1]} by ${cols[0]}`;
                         const smsHref = `sms:+15869074619?body=${encodeURIComponent(smsBody)}`;
 
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td data-label=\"Song\" data-artist=\"${cols[0]}\"><a href=\"${mailto}\">${cols[1]}</a><a class=\"sms-btn\" href=\"${smsHref}\" onclick=\"event.stopPropagation();\">SMS</a></td><td data-label=\"Artist\">${cols[0]}</td><td data-label=\"Genre\">${cols[2]}</td><td data-label=\"Year\">${cols[3]}</td>`;
+                        tr.innerHTML = `<td data-label="Song" data-artist="${cols[0]}"><a href="${smsHref}">${cols[1]}</a></td><td data-label="Artist">${cols[0]}</td><td data-label="Genre">${cols[2]}</td><td data-label="Year">${cols[3]}</td>`;
                         tr.onclick = () => {
-                            // open the mailto by default when row is clicked
-                            window.location.href = mailto;
+                            // open SMS app when row is clicked
+                            window.location.href = smsHref;
                             window.parent.postMessage({ detail: { song: cols[1], artist: cols[0] } }, "*");
                         };
                         tableBody.appendChild(tr);
