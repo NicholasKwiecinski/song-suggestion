@@ -177,17 +177,56 @@
             font-size: 0.9rem;
             text-align: center
         }
-        /* Override: compact mobile left-label / right-value layout (overrides previous mobile rules) */
+
+        /* Mobile: stacked card layout (label above value) */
         @media (max-width:600px) {
-            /* Each gig becomes a card; fields are compact rows with label on left and value on right */
-            tbody tr { padding: 6px 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #eee; }
-            tbody td { display:flex; justify-content:space-between; align-items:flex-start; padding:6px 0; gap:8px; white-space:normal; font-size:0.95rem }
-            tbody td:before { content: attr(data-label); flex:0 0 86px; font-weight:700; color:var(--muted); margin-right:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-            tbody td span.value { display:inline-block; flex:1 1 auto; text-align:right; white-space:normal; overflow:visible; word-break:break-word }
-            /* Ensure labels are the short names */
-            .col-date:before { content: 'Date' }
-            .col-venue:before { content: 'Venue' }
-            .col-location:before { content: 'Location' }
+            thead {
+                display: none
+            }
+
+            table {
+                border-radius: 0;
+                box-shadow: none
+            }
+
+            tbody tr {
+                display: block;
+                padding: 12px 14px;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                border: 1px solid #eee;
+                background: #fff;
+            }
+
+            tbody tr:last-child {
+                margin-bottom: 0
+            }
+
+            tbody td {
+                display: block;
+                padding: 6px 0;
+                border: none;
+                white-space: normal;
+                overflow: visible;
+            }
+
+            /* Label shown above the value for each field */
+            tbody td:before {
+                content: attr(data-label);
+                display: block;
+                font-weight: 700;
+                color: var(--muted);
+                margin-bottom: 6px;
+            }
+
+            /* Value spans become blocks and wrap naturally */
+            tbody td span.value {
+                display: block;
+                font-weight: 600;
+                color: #222;
+                white-space: normal;
+                word-break: break-word
+            }
         }
     </style>
 </head>
@@ -207,7 +246,7 @@
             </tbody>
         </table>
 
-        <div id="status" class="meta">Loading gigs…</div>
+        <div id="status" class="meta"></div>
     </main>
 
     <script>
@@ -272,7 +311,6 @@
 
         function loadGigs() {
             renderLoading(6);
-            statusEl.textContent = 'Loading gigs…';
             fetch(CSV_URL).then(r => { if (!r.ok) throw new Error('Network'); return r.text() }).then(text => {
                 const rows = parseCSV(text);
                 if (rows.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" class="empty">No gigs found</td></tr>'; statusEl.textContent = 'No gigs found'; return }
