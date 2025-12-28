@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gig List</title>
+    <style>
+        :root {
+            --bg: #f9f9f9;
+            --card: #fff;
+            --muted: #666;
+            --accent: #007BFF
+        }
+
+        body {
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #222
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin: 8px 0
+        }
+
+        p.lead {
+            text-align: center;
+            color: var(--muted);
+            margin: 6px 0 18px
+        }
+
+        #searchInput {
+            display: block;
+            margin: 0 auto 16px;
+            box-sizing: border-box;
+            width: calc(100% - 32px);
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-weight: 600
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+            border-radius: 8px;
+            overflow: hidden
+        }
+
+        thead th {
+            background: #fafafa;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 700;
+            color: #222;
+            cursor: pointer
+        }
+
+        tbody td {
+            padding: 12px 14px;
+            border-top: 1px solid #f1f1f1
+        }
+
+        tbody tr:hover {
+            background: #fbfbfb
+        }
+
+        .col-date {
+            width: 160px;
+            white-space: nowrap
+        }
+
+        .col-venue {
+            width: 40%
+        }
+
+        .col-location {
+            width: 35%
+        }
+
+        /* Mobile responsive table cards */
+        @media (max-width:600px) {
+            thead {
+                display: none
+            }
+
+            table,
+            tbody,
+            thead,
+            tr,
+            td {
+                display: block;
+                width: 100%
+            }
+
+            tbody tr {
+                margin-bottom: 10px;
+                border-radius: 8px;
+                border: 1px solid #eee;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, .03);
+                overflow: hidden
+            }
+
+            tbody td {
+                border: none;
+                padding: 12px
+            }
+
+            td[data-label="Date"] {
+                font-weight: 700
+            }
+
+            td[data-label="Venue"] {
+                font-size: 1rem;
+                font-weight: 700
+            }
+
+            td[data-label="Location"] {
+                color: var(--muted);
+                font-size: 0.95rem
+            }
+        }
+
+        /* Loading skeleton */
+        .loading-row td {
+            background: linear-gradient(90deg, #f6f6f6 0%, #eeeeee 50%, #f6f6f6 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s linear infinite;
+            height: 48px
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0
+            }
+
+            100% {
+                background-position: -200% 0
+            }
+        }
+
+        .empty {
+            padding: 18px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        .meta {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            text-align: center
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>Upcoming Gigs</h1>
+        <p class="lead">Data source: Google Sheets — live update (CSV)</p>
+
+        <input id="searchInput" placeholder="Search by date, venue or location" oninput="filterTable()" />
+
+        <table id="gigTable" aria-describedby="gigTableDesc">
+            <thead>
+                <tr>
+                    <th class="col-date" onclick="sortByColumn('date')">Date ▲▼</th>
+                    <th class="col-venue" onclick="sortByColumn('venue')">Venue</th>
+                    <th class="col-location" onclick="sortByColumn('location')">Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- rows injected here -->
+            </tbody>
+        </table>
+
+        <div id="status" class="meta">Loading gigs…</div>
+    </main>
+
+    <script>
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQAjK_5EHk22Tbavmu9BbC5VHcgIr4aM7EXaLzuCJsYWoIheuDmSw5Q-RYRVMoRqvyLUNBTbOiXP26q/pub?gid=0&single=true&output=csv';
+        const tableBody = document.querySelector('#gigTable tbody');
+        const statusEl = document.getElementById('status');
+        let gigs = [];
+        let currentSort = { col: 'date', dir: 'asc' };
+
+        // Simple RFC4180 CSV parser that handles quoted fields with commas
+        function parseCSV(text) {
+            const rows = [];
+            let cur = '';
+            let row = [];
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (text[i + 1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+                    } else { cur += ch }
+                } else {
+                    if (ch === '"') { inQuotes = true; }
+                    else if (ch === ',') { row.push(cur); cur = ''; }
+                    else if (ch === '\r') continue;
+                    else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+                    else cur += ch;
+                }
+            }
+            // push last
+            if (cur.length || row.length) { row.push(cur); rows.push(row); }
+            return rows;
+        }
+
+        function renderLoading(rows = 6) {
+            tableBody.innerHTML = '';
+            for (let i = 0; i < rows; i++) { const tr = document.createElement('tr'); tr.className = 'loading-row'; tr.innerHTML = '<td></td><td></td><td></td>'; tableBody.appendChild(tr); }
+        }
+
+        function normalizeRow(r) {
+            // expect columns in order: Date,Venue Name,Venue Location OR similar. We'll attempt to map heuristically
+            // Trim whitespace
+            return r.map(c => (c || '').trim());
+        }
+
+        function parseDateFlexible(s) {
+            if (!s) return null;
+            // try MM/DD/YYYY or M/D/YYYY
+            const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m1) { return new Date(Number(m1[3]), Number(m1[1]) - 1, Number(m1[2])); }
+            // try ISO
+            const d = new Date(s);
+            if (!isNaN(d)) return d;
+            // fallback null
+            return null;
+        }
+
+        function loadGigs() {
+            renderLoading(6);
+            statusEl.textContent = 'Loading gigs…';
+            fetch(CSV_URL).then(r => { if (!r.ok) throw new Error('Network'); return r.text() }).then(text => {
+                const rows = parseCSV(text);
+                if (rows.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" class="empty">No gigs found</td></tr>'; statusEl.textContent = 'No gigs found'; return }
+                // remove header row if looks like header
+                let header = rows[0].map(c => (c || '').toLowerCase());
+                let start = 0;
+                if (header.some(h => h.includes('date') || h.includes('venue'))) { start = 1 }
+                const parsed = [];
+                for (let i = start; i < rows.length; i++) {
+                    const r = normalizeRow(rows[i]);
+                    // skip rows with almost all empty
+                    if (r.every(c => !c)) continue;
+                    // map columns: date = col0, venue = col1, location = col2 (based on example)
+                    const dateRaw = r[0] || '';
+                    const venue = r[1] || '';
+                    const location = r[2] || '';
+                    parsed.push({ dateRaw, venue, location, dateObj: parseDateFlexible(dateRaw) });
+                }
+                gigs = parsed;
+                statusEl.textContent = `Loaded ${gigs.length} gigs`;
+                sortAndRender();
+            }).catch(err => {
+                console.error('Failed to load CSV', err);
+                tableBody.innerHTML = '<tr><td colspan="3" class="empty">Failed to load gigs. Please try again later.</td></tr>';
+                statusEl.textContent = 'Failed to load gigs';
+            });
+        }
+
+        function sortAndRender() {
+            if (currentSort.col === 'date') {
+                gigs.sort((a, b) => {
+                    // null dates come last
+                    if (a.dateObj && b.dateObj) return (currentSort.dir === 'asc') ? a.dateObj - b.dateObj : b.dateObj - a.dateObj;
+                    if (a.dateObj) return (currentSort.dir === 'asc') ? -1 : 1;
+                    if (b.dateObj) return (currentSort.dir === 'asc') ? 1 : -1;
+                    // fallback to comparing raw string
+                    return (currentSort.dir === 'asc') ? a.dateRaw.localeCompare(b.dateRaw) : b.dateRaw.localeCompare(a.dateRaw);
+                });
+            } else {
+                const key = currentSort.col;
+                gigs.sort((a, b) => {
+                    const A = (a[key] || '').toLowerCase();
+                    const B = (b[key] || '').toLowerCase();
+                    if (A < B) return currentSort.dir === 'asc' ? -1 : 1;
+                    if (A > B) return currentSort.dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            renderTable(gigs);
+        }
+
+        function renderTable(items) {
+            tableBody.innerHTML = '';
+            if (items.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" class="empty">No gigs match your search</td></tr>'; return }
+            items.forEach(g => {
+                const tr = document.createElement('tr');
+                const dateText = g.dateRaw || '';
+                tr.innerHTML = `<td data-label="Date" class="col-date">${escapeHtml(dateText)}</td>
+                                <td data-label="Venue" class="col-venue">${escapeHtml(g.venue)}</td>
+                                <td data-label="Location" class="col-location">${escapeHtml(g.location)}</td>`;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(s) { return (s || '').replace(/[&<>\"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]) }
+
+        function filterTable() {
+            const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+            if (!q) { renderTable(gigs); statusEl.textContent = `Loaded ${gigs.length} gigs`; return }
+            const filtered = gigs.filter(g => {
+                return (g.dateRaw || '').toLowerCase().includes(q) || (g.venue || '').toLowerCase().includes(q) || (g.location || '').toLowerCase().includes(q);
+            });
+            renderTable(filtered);
+            statusEl.textContent = `Showing ${filtered.length} of ${gigs.length}`;
+        }
+
+        function sortByColumn(col) {
+            if (currentSort.col === col) { currentSort.dir = (currentSort.dir === 'asc') ? 'desc' : 'asc'; }
+            else { currentSort.col = col; currentSort.dir = 'asc' }
+            sortAndRender();
+        }
+
+        // Initialize
+        loadGigs();
+    </script>
+</body>
+
+</html>

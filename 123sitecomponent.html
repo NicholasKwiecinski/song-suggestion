@@ -1,23 +1,34 @@
 <style>
+    /* Minimal styles for a single centered button */
     .container {
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        height: 100vh;
-        /* fill the available viewport inside the iframe */
+        text-align: center;
+        padding: 48px 16px;
     }
 
-    /* Style the iframe to fill the container */
-    .responsive-iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: 0;
+    .open-btn {
+        padding: 12px 18px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: none;
+        background: #007BFF;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .open-btn:active {
+        transform: translateY(1px);
     }
 </style>
 
 <div id="container" class="container">
-    <iframe class="responsive-iframe" src="https://nicholaskwiecinski.github.io/song-suggestion/"></iframe>
+    <button id="openAppBtn" class="open-btn" aria-label="Open Song Suggestion in a new window">Open Song
+        Suggestion</button>
 </div>
+
+<script>
+    (function () {
+        const URL = 'https://nicholaskwiecinski.github.io/song-suggestion/';
+        const btn = document.getElementById('openAppBtn');
+        if (btn) btn.addEventListener('click', () => window.open(URL, '_blank', 'noopener,noreferrer'));
+    })();
+</script>
