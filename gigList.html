@@ -91,40 +91,67 @@
 
         /* Mobile: compact single-line rows (Date | Venue | Location) */
         @media (max-width:600px) {
-            thead { display: none }
+            thead {
+                display: none
+            }
 
-            table { border-radius: 0; box-shadow: none }
+            table {
+                border-radius: 0;
+                box-shadow: none
+            }
 
+            /* Allow rows to expand (wrap) and increase padding for readability */
             tbody tr {
                 display: flex;
                 flex-direction: row;
-                align-items: center;
-                gap: 8px;
-                padding: 10px 12px;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 12px 14px;
                 border-bottom: 1px solid #eee;
                 background: #fff;
+                min-height: 56px;
             }
 
-            tbody tr:last-child { border-bottom: none }
+            tbody tr:last-child {
+                border-bottom: none
+            }
 
+            /* Enable wrapping for cells so long venue/location strings can flow to a second line */
             tbody td {
                 display: inline-block;
                 padding: 0;
                 border: none;
                 vertical-align: middle;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                white-space: normal;
+                /* allow wrapping */
+                overflow: visible;
+                text-overflow: clip;
+                word-break: break-word;
             }
 
-            /* Date: fixed small column */
-            .col-date { flex: 0 0 90px; font-weight: 700; color: #222 }
+            /* Date: fixed small column, keep single-line */
+            .col-date {
+                flex: 0 0 100px;
+                font-weight: 700;
+                color: #222;
+                white-space: nowrap
+            }
 
-            /* Venue: flexible, takes remaining space */
-            .col-venue { flex: 1 1 auto; padding: 0 8px; font-weight: 600 }
+            /* Venue: flexible, takes remaining space and may wrap to multiple lines */
+            .col-venue {
+                flex: 1 1 auto;
+                padding: 0 8px;
+                font-weight: 600;
+                min-width: 0
+            }
 
-            /* Location: small fixed column, right aligned */
-            .col-location { flex: 0 0 120px; color: var(--muted); text-align: right }
+            /* Location: fixed-ish but allowed to wrap if needed */
+            .col-location {
+                flex: 0 0 140px;
+                color: var(--muted);
+                text-align: right;
+                min-width: 80px
+            }
         }
 
         /* Loading skeleton */
