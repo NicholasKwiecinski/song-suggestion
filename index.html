@@ -20,19 +20,26 @@
         }
 
         #searchInput {
-            top: 20px;
+            position: sticky;
+            top: 8px;
             z-index: 1000;
+            box-sizing: border-box;
+            width: calc(100% - 32px);
+            /* full width with 16px gutters */
+            margin: 12px 16px;
+            max-width: none;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            /* bolder text */
+            color: #222;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #ffffff;
+            /* solid white */
             background-clip: padding-box;
             opacity: 1;
-            background-color: #ffffff;
-            position: sticky;
-            width: 90%;
-            margin: 20px auto;
-            display: block;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
 
         table {
@@ -74,52 +81,98 @@
 
         @media (max-width: 600px) {
             #searchInput {
-                width: 85%;
-                font-size: 14px;
+                width: calc(100% - 16px);
+                margin: 8px;
+                padding: 10px 12px;
+                font-size: 15px;
+                font-weight: 600;
             }
 
+            /* Hide table header on mobile and display rows as single-line flex cards */
             table,
             thead,
-            tbody,
-            th,
-            td,
-            tr {
-                display: block;
+            tbody {
+                width: 100%;
             }
 
-            th {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
+            thead {
+                display: none;
             }
 
             tr {
-                margin: 0 0 1rem 0;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin: 0 0 8px 0;
+                padding: 8px 12px;
+                border: 1px solid #eee;
+                border-radius: 6px;
+                background: #fff;
             }
 
             tr:nth-child(odd) {
-                background: #f1f1f1;
+                background: #fafafa;
             }
 
             td {
+                display: block;
                 border: none;
-                position: relative;
-                padding-left: 50%;
-                text-align: right;
-            }
-
-            td:before {
-                position: absolute;
-                top: 12px;
-                left: 12px;
-                width: 45%;
-                padding-right: 10px;
+                padding: 0;
+                vertical-align: middle;
                 white-space: nowrap;
-                content: attr(data-label);
-                text-align: left;
-                font-weight: bold;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
+            /* Show only Song and Artist columns on mobile */
+            td[data-label="Song"] {
+                flex: 1 1 65%;
+                padding-right: 8px;
+                font-weight: 600;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            td[data-label="Song"] a {
+                display: block;
+                width: 100%;
+                color: inherit;
+                text-decoration: none;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: 14px;
+                line-height: 1.1;
+            }
+
+            /* show artist underneath the song using data-artist attribute */
+            td[data-label="Song"]::after {
+                content: attr(data-artist);
+                display: block;
+                margin-top: 4px;
+                font-size: 12px;
+                color: #666;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            td[data-label="Artist"] {
+                display: none !important;
+            }
+
+            td[data-label="Genre"],
+            td[data-label="Year"] {
+                display: none !important;
+            }
+
+            /* hide pseudo-labels used for stacked layout */
+            td:before {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -185,7 +238,7 @@
                 const cols = row.split(',');
                 if (cols.length >= 4) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td data-label="Song"><a href="sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}">${cols[1]}</a></td><td data-label="Artist">${cols[0]}</td><td data-label="Genre">${cols[2]}</td><td data-label="Year">${cols[3]}</td>`;
+                    tr.innerHTML = `<td data-label="Song" data-artist="${cols[0]}"><a href="sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}">${cols[1]}</a></td><td data-label="Artist">${cols[0]}</td><td data-label="Genre">${cols[2]}</td><td data-label="Year">${cols[3]}</td>`;
                     tr.onclick = () => {
                         window.location.href = `sms:+15869074619&body=Requesting%20${encodeURIComponent(cols[1])}%20by%20${encodeURIComponent(cols[0])}`;
                         window.parent.postMessage({ detail: { song: cols[1], artist: cols[0] } }, "*");
@@ -195,10 +248,6 @@
             });
         }
         fetchCSV();
-
-
-
-
     </script>
 
 </body>
