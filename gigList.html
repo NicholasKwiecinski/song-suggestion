@@ -89,47 +89,42 @@
             width: 35%
         }
 
-        /* Mobile responsive table cards */
+        /* Mobile: compact single-line rows (Date | Venue | Location) */
         @media (max-width:600px) {
-            thead {
-                display: none
-            }
+            thead { display: none }
 
-            table,
-            tbody,
-            thead,
-            tr,
-            td {
-                display: block;
-                width: 100%
-            }
+            table { border-radius: 0; box-shadow: none }
 
             tbody tr {
-                margin-bottom: 10px;
-                border-radius: 8px;
-                border: 1px solid #eee;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, .03);
-                overflow: hidden
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                border-bottom: 1px solid #eee;
+                background: #fff;
             }
+
+            tbody tr:last-child { border-bottom: none }
 
             tbody td {
+                display: inline-block;
+                padding: 0;
                 border: none;
-                padding: 12px
+                vertical-align: middle;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            td[data-label="Date"] {
-                font-weight: 700
-            }
+            /* Date: fixed small column */
+            .col-date { flex: 0 0 90px; font-weight: 700; color: #222 }
 
-            td[data-label="Venue"] {
-                font-size: 1rem;
-                font-weight: 700
-            }
+            /* Venue: flexible, takes remaining space */
+            .col-venue { flex: 1 1 auto; padding: 0 8px; font-weight: 600 }
 
-            td[data-label="Location"] {
-                color: var(--muted);
-                font-size: 0.95rem
-            }
+            /* Location: small fixed column, right aligned */
+            .col-location { flex: 0 0 120px; color: var(--muted); text-align: right }
         }
 
         /* Loading skeleton */
@@ -271,7 +266,6 @@
                     if (!g.dateObj) return true; // keep undated or flexible entries
                     return g.dateObj >= todayStart; // keep today and future
                 });
-                statusEl.textContent = `Loaded ${gigs.length} gigs`;
                 sortAndRender();
             }).catch(err => {
                 console.error('Failed to load CSV', err);
